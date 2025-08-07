@@ -13,13 +13,13 @@ import (
 
 func ListTodos(args []string, dbConn *database.DBConnection) {
 
-	completedFlag := flag.Bool("completed", false, "filter completed todos")
+	listCmd := flag.NewFlagSet("list", flag.ExitOnError)
 
-	flag.Parse()
+	completed := listCmd.Bool("completed", false, "When true, filters the todo list showing only the ones that are complete")
 
-	fmt.Printf("flag test %v\n", *completedFlag)
+	listCmd.Parse(args)
 
-	todos, err := dbConn.GetTodos()
+	todos, err := dbConn.GetTodos(completed)
 	if err != nil {
 		log.Fatalf("Error getting the todos: %v\n", err)
 	}

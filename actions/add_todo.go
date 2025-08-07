@@ -2,6 +2,7 @@ package actions
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
 	"log"
 	"time"
@@ -12,12 +13,27 @@ import (
 
 func AddToDo(args []string, dbConn *database.DBConnection) {
 
+	listCmd := flag.NewFlagSet("add", flag.ExitOnError)
+	todoTitle := listCmd.String("todo", "", "Todo yo want to add")
+	dueToDate := listCmd.String("dueTo", "", "When the todo is due to")
+	listCmd.Parse(args)
+
 	newTodo := models.Todo{
 		ID:        0,
-		Todo:      args[0],
+		Todo:      *todoTitle,
 		CreatedAt: time.Now(),
 		UpdatedAt: sql.NullTime{Valid: false},
 		DueTo:     sql.NullTime{Valid: false},
+	}
+
+	if *dueToDate != "" {
+		time, err := time.Parse("2006-01-02", *dueToDate)
+		if err != nil {
+			log.Fatalf("Error parsing time: %v\n", err)
+		}
+
+		newTodo.DueTo.Valid = true
+		newTodo.DueTo.Time = time
 	}
 
 	result, err := dbConn.InsertTodo(newTodo)

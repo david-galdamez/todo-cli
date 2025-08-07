@@ -30,11 +30,6 @@ func main() {
 		DB: conn,
 	}
 
-	_, err = database.MigrateDatabase(dbConn)
-	if err != nil {
-		log.Fatalf("Error creating table: %v\n", err)
-	}
-
 	switch action {
 	case "migrate":
 		_, err = database.MigrateDatabase(dbConn)

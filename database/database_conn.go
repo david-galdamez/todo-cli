@@ -2,6 +2,8 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/david-galdamez/todo-cli/models"
@@ -28,29 +30,58 @@ func (db *DBConnection) MarkAsCompleted(todoId uint) (sql.Result, error) {
 		Valid: true,
 	}
 
-	return db.DB.Exec(`UPDATE todo SET is_completed = true, updated_at = ?  WHERE id = ?;`, updatedAt, todoId)
+	dueTo := sql.NullTime{
+		Valid: false,
+	}
+
+	return db.DB.Exec(`UPDATE todo SET is_completed = true, updated_at = ?, due_to = ?  WHERE id = ?;`, updatedAt, dueTo, todoId)
 }
 
-func (db *DBConnection) UpdateTodo(todoId uint, newTodo string) (sql.Result, error) {
+func (db *DBConnection) UpdateTodo(todoId *uint, newTodo *string, newDate *time.Time) (sql.Result, error) {
+
+	fields := []string{}
+	args := []interface{}{}
+
+	if *newTodo != "" {
+		fields = append(fields, "todo = ?")
+		args = append(args, *newTodo)
+	}
+
+	if newDate != nil {
+
+		fields = append(fields, "due_to = ?")
+		args = append(args, sql.NullTime{
+			Time:  *newDate,
+			Valid: true,
+		})
+	}
 
 	updatedAt := sql.NullTime{
 		Time:  time.Now(),
 		Valid: true,
 	}
 
-	return db.DB.Exec("UPDATE todo SET todo = ?, updated_at = ? WHERE id = ?", newTodo, updatedAt, todoId)
+	fields = append(fields, "updated_at = ?")
+	args = append(args, updatedAt)
+
+	args = append(args, *todoId)
+
+	queryString := fmt.Sprintf("UPDATE todo SET %v WHERE id = ?", joinFields(fields))
+
+	return db.DB.Exec(queryString, args...)
+}
+
+func joinFields(fields []string) string {
+	return strings.Join(fields, ",")
 }
 
 func (db *DBConnection) GetTodo(todoId uint) (*models.Todo, error) {
 
-	result, err := db.DB.Query("SELECT id, todo, is_completed, created_at, updated_at, due_to FROM todo WHERE id = ?;", todoId)
-	if err != nil {
-		return nil, err
-	}
+	row := db.DB.QueryRow("SELECT id, todo, is_completed, created_at, updated_at, due_to FROM todo WHERE id = ?;", todoId)
 
 	todo := models.Todo{}
 
-	err = result.Scan(todo.ID, todo.Todo, todo.IsCompleted, todo.CreatedAt, todo.UpdatedAt, todo.DueTo)
+	err := row.Scan(&todo.ID, &todo.Todo, &todo.IsCompleted, &todo.CreatedAt, &todo.UpdatedAt, &todo.DueTo)
 	if err != nil {
 		return nil, err
 	}
@@ -58,11 +89,18 @@ func (db *DBConnection) GetTodo(todoId uint) (*models.Todo, error) {
 	return &todo, nil
 }
 
-func (db *DBConnection) GetTodos() ([]models.Todo, error) {
+func (db *DBConnection) GetTodos(completed *bool) ([]models.Todo, error) {
 
 	listOfTodos := []models.Todo{}
+	queryString := "SELECT id, todo, is_completed, created_at, updated_at, due_to FROM todo"
 
-	result, err := db.DB.Query("SELECT id, todo, is_completed, created_at, updated_at, due_to FROM todo;")
+	if *completed {
+		queryString = queryString + " WHERE is_completed = true;"
+	} else {
+		queryString = queryString + ";"
+	}
+
+	result, err := db.DB.Query(queryString)
 	if err != nil {
 		return nil, err
 	}

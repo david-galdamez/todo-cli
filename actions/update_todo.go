@@ -1,8 +1,10 @@
 package actions
 
 import (
+	"flag"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/david-galdamez/todo-cli/database"
 	"github.com/david-galdamez/todo-cli/utils"
@@ -33,16 +35,35 @@ func MarkCompleted(idArg string, dbConn *database.DBConnection) {
 }
 
 func UpdateTodo(args []string, dbConn *database.DBConnection) {
-	todoId, err := utils.ParseUint(args[0])
-	if err != nil {
-		log.Fatalf("Error parsing the id: %v\n", err)
+
+	listCmd := flag.NewFlagSet("update", flag.ExitOnError)
+
+	todoId := listCmd.Uint("id", 0, "Id of the todo you want to update")
+	newTodo := listCmd.String("title", "", "Title of the todo you want to update")
+	newDate := listCmd.String("dueTo", "", "When the todo is due to")
+
+	listCmd.Parse(args)
+
+	var dueTo *time.Time
+
+	if *newDate != "" {
+		newTime, err := time.Parse("2006-01-02", *newDate)
+		if err != nil {
+			log.Fatalf("Error parsing date: %v\n", err)
+		}
+
+		dueTo = &newTime
 	}
 
-	//args[1] is the new todo
-	_, err = dbConn.UpdateTodo(todoId, args[1])
+	if *newTodo == "" || dueTo == nil {
+		fmt.Println("You have to pass a new todo title or a new due to date")
+		return
+	}
+
+	_, err := dbConn.UpdateTodo(todoId, newTodo, dueTo)
 	if err != nil {
 		log.Fatalf("Error updating todo: %v\n", err)
 	}
 
-	fmt.Printf("Todo with id: %v updated correctly\n", todoId)
+	fmt.Printf("Todo with id: %v updated correctly\n", *todoId)
 }
