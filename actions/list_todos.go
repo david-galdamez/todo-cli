@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -11,6 +12,13 @@ import (
 )
 
 func ListTodos(args []string, dbConn *database.DBConnection) {
+
+	completedFlag := flag.Bool("completed", false, "filter completed todos")
+
+	flag.Parse()
+
+	fmt.Printf("flag test %v\n", *completedFlag)
+
 	todos, err := dbConn.GetTodos()
 	if err != nil {
 		log.Fatalf("Error getting the todos: %v\n", err)
