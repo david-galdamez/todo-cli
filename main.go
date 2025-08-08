@@ -52,11 +52,11 @@ func main() {
 	case "update":
 		actions.UpdateTodo(os.Args[2:], dbConn)
 	case "complete":
-		actions.MarkCompleted(os.Args[2], dbConn)
+		actions.MarkCompleted(os.Args[2:], dbConn)
 	case "delete":
-		actions.DeleteTodo(os.Args[2], dbConn)
+		actions.DeleteTodo(os.Args[2:], dbConn)
 	case "help":
-		fmt.Printf("Todo actions %v\n", action)
+		actions.HelpTodo()
 	default:
 		fmt.Println("Action does not exist")
 	}

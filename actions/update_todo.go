@@ -7,16 +7,15 @@ import (
 	"time"
 
 	"github.com/david-galdamez/todo-cli/database"
-	"github.com/david-galdamez/todo-cli/utils"
 )
 
-func MarkCompleted(idArg string, dbConn *database.DBConnection) {
-	todoId, err := utils.ParseUint(idArg)
-	if err != nil {
-		log.Fatalf("Error parsing the id: %v\n", err)
-	}
+func MarkCompleted(args []string, dbConn *database.DBConnection) {
+	listCmd := flag.NewFlagSet("update", flag.ExitOnError)
+	todoId := listCmd.Uint("id", 0, "Id of the todo you want to mark as completed")
 
-	todo, err := dbConn.GetTodo(todoId)
+	listCmd.Parse(args)
+
+	todo, err := dbConn.GetTodo(*todoId)
 	if err != nil {
 		log.Fatalf("Error getting the todo: %v\n", err)
 	}
@@ -26,7 +25,7 @@ func MarkCompleted(idArg string, dbConn *database.DBConnection) {
 		return
 	}
 
-	_, err = dbConn.MarkAsCompleted(todoId)
+	_, err = dbConn.MarkAsCompleted(*todoId)
 	if err != nil {
 		log.Fatalf("Error marking as complete: %v\n", err)
 	}

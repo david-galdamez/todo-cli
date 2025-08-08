@@ -1,20 +1,20 @@
 package actions
 
 import (
+	"flag"
 	"fmt"
 	"log"
 
 	"github.com/david-galdamez/todo-cli/database"
-	"github.com/david-galdamez/todo-cli/utils"
 )
 
-func DeleteTodo(idArg string, dbConn *database.DBConnection) {
-	todoId, err := utils.ParseUint(idArg)
-	if err != nil {
-		log.Fatalf("Error parsing id: %v\n", err)
-	}
+func DeleteTodo(args []string, dbConn *database.DBConnection) {
+	listCmd := flag.NewFlagSet("update", flag.ExitOnError)
+	todoId := listCmd.Uint("id", 0, "Id of the todo you want to delete")
 
-	_, err = dbConn.DeleteTodo(todoId)
+	listCmd.Parse(args)
+
+	_, err := dbConn.DeleteTodo(*todoId)
 	if err != nil {
 		log.Fatalf("Error deleting the todo: %v\n", err)
 	}
